@@ -1,0 +1,43 @@
+name: Build Dev Environment Image
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '.devcontainer/Dockerfile'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase Repo Name
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          push: true
+          tags: ghcr.io/${{ env.REPO_LC }}/dev-env:latest
+          # Crucial: These match the args in your devcontainer.json
+          build-args: |
+            VARIANT=noble
+            GCC_VER=14
+            LLVM_VER=21
+            USE_CLANG=1
