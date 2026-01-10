@@ -1,4 +1,4 @@
-ARG DEBIAN_VERSION=testing-20250106-slim
+ARG DEBIAN_VERSION=testing-slim
 FROM debian:${DEBIAN_VERSION}
 
 USER root
