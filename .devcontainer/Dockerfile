@@ -60,7 +60,7 @@ RUN set -eux \
     && llvm_version=22 llvm_suffix="" \
     && repo_codename="${LLVM_VERSION_CODENAME:-${VERSION_CODENAME:-bookworm}}" \
     && repo_suite="llvm-toolchain-${repo_codename}" \
-    && if [ "$ID" = "debian" ] && { [ "${VERSION}" = "unstable" ] || [ "${VERSION}" = "testing" ] || [ "$repo_codename" = "forky" ]; }; then \
+    && if [ "$ID" = "debian" ] && { [ "${VERSION}" = "unstable" ] || [ "${VERSION}" = "testing" ] || [ "$repo_codename" = "forky" ] || [ "$repo_codename" = "trixie" ]; }; then \
          repo_codename=unstable; repo_suite=llvm-toolchain; \
        fi \
     && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg \
