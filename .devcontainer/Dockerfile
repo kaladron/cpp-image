@@ -1,4 +1,5 @@
-FROM debian:testing-slim
+ARG DEBIAN_VERSION=testing-20250106-slim
+FROM debian:${DEBIAN_VERSION}
 
 USER root
 
@@ -42,6 +43,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         unzip \
         nano \
         jq \
+        zsh \
         build-essential \
         gdb \
         clang \
@@ -50,6 +52,10 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         libssl-dev \
         openssl \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Install oh-my-zsh for the vscode user
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --user $USERNAME \
+    && chsh -s /usr/bin/zsh $USERNAME
 
 # Update CA certificates to fix SSL issues
 RUN update-ca-certificates
