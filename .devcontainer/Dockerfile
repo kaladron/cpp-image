@@ -54,9 +54,11 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install LLVM apt repositories and clang 21/22 plus ninja-build
-RUN curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-21 main" | tee /etc/apt/sources.list.d/llvm-toolchain.list \
-    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-22 main" | tee -a /etc/apt/sources.list.d/llvm-toolchain.list \
+ARG LLVM_VERSION_CODENAME=
+RUN llvm_codename="${LLVM_VERSION_CODENAME:-$([ -r /etc/os-release ] && . /etc/os-release && echo ${VERSION_CODENAME:-bookworm})}" \
+    && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename}-21 main" | tee /etc/apt/sources.list.d/llvm-toolchain.list \
+    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename}-22 main" | tee -a /etc/apt/sources.list.d/llvm-toolchain.list \
     && apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
         clang-21 \
