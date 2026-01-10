@@ -64,14 +64,8 @@ RUN set -eux \
          repo_codename=unstable; repo_suite=llvm-toolchain; \
        fi \
     && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg \
-    && cat <<EOF | tee /etc/apt/sources.list.d/llvm-toolchain.sources >/dev/null \
-Types: deb
-URIs: http://apt.llvm.org/${repo_codename}/
-Suites: ${repo_suite}
-Components: main
-Architectures: amd64
-Signed-By: /usr/share/keyrings/llvm-snapshot.gpg
-EOF \
+    && printf "Types: deb\nURIs: http://apt.llvm.org/%s/\nSuites: %s\nComponents: main\nArchitectures: amd64\nSigned-By: /usr/share/keyrings/llvm-snapshot.gpg\n" "${repo_codename}" "${repo_suite}" \
+        | tee /etc/apt/sources.list.d/llvm-toolchain.sources >/dev/null \
     && apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
         clang-22 \
