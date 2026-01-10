@@ -58,7 +58,8 @@ ARG LLVM_VERSION_CODENAME=
 RUN llvm_codename="${LLVM_VERSION_CODENAME:-$([ -r /etc/os-release ] && . /etc/os-release && echo ${VERSION_CODENAME:-bookworm})}" \
     && case "$llvm_codename" in forky|testing|sid|"") llvm_codename=bookworm ;; esac \
     && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename}-21 main" | tee /etc/apt/sources.list.d/llvm-toolchain.list \
+    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename} main" | tee /etc/apt/sources.list.d/llvm-toolchain.list \
+    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename}-21 main" | tee -a /etc/apt/sources.list.d/llvm-toolchain.list \
     && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename}-22 main" | tee -a /etc/apt/sources.list.d/llvm-toolchain.list \
     && apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
