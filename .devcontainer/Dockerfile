@@ -58,6 +58,7 @@ ARG LLVM_VERSION_CODENAME=
 RUN set -eux \
     && . /etc/os-release \
     && llvm_version=22 llvm_suffix="" \
+    && VERSION="${VERSION:-}" \
     && repo_codename="${LLVM_VERSION_CODENAME:-${VERSION_CODENAME:-bookworm}}" \
     && repo_suite="llvm-toolchain-${repo_codename}" \
     && if [ "$ID" = "debian" ] && { [ "${VERSION}" = "unstable" ] || [ "${VERSION}" = "testing" ] || [ "$repo_codename" = "forky" ] || [ "$repo_codename" = "trixie" ]; }; then \
