@@ -59,11 +59,22 @@ RUN llvm_codename="${LLVM_VERSION_CODENAME:-$([ -r /etc/os-release ] && . /etc/o
     && case "$llvm_codename" in forky|testing|sid|"") llvm_codename=bookworm ;; esac \
     && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg \
     && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename} main" | tee /etc/apt/sources.list.d/llvm-toolchain.list \
-    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename}-21 main" | tee -a /etc/apt/sources.list.d/llvm-toolchain.list \
     && apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
-        clang-21 \
         clang-22 \
+        clangd-22 \
+        clang-format-22 \
+        clang-tidy-22 \
+        lld-22 \
+        lldb-22 \
+        libclang-22-dev \
+        libclang-cpp22-dev \
+        libclang-rt-22-dev \
+        libfuzzer-22-dev \
+        libomp-22-dev \
+        libc++-22-dev \
+        libc++abi-22-dev \
+        libunwind-22-dev \
         ninja-build \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
