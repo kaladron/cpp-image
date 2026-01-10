@@ -53,23 +53,42 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         openssl \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# Install LLVM apt repositories and clang 21/22 plus ninja-build
+# Install LLVM apt repository and full clang 22 toolchain plus ninja-build
 ARG LLVM_VERSION_CODENAME=
-RUN llvm_codename="${LLVM_VERSION_CODENAME:-$([ -r /etc/os-release ] && . /etc/os-release && echo ${VERSION_CODENAME:-bookworm})}" \
-    && case "$llvm_codename" in forky|testing|sid|"") llvm_codename=bookworm ;; esac \
+RUN set -eux \
+    && . /etc/os-release \
+    && llvm_version=22 llvm_suffix="" \
+    && repo_codename="${LLVM_VERSION_CODENAME:-${VERSION_CODENAME:-bookworm}}" \
+    && repo_suite="llvm-toolchain-${repo_codename}" \
+    && if [ "$ID" = "debian" ] && { [ "${VERSION}" = "unstable" ] || [ "${VERSION}" = "testing" ] || [ "$repo_codename" = "forky" ]; }; then \
+         repo_codename=unstable; repo_suite=llvm-toolchain; \
+       fi \
     && curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg] http://apt.llvm.org/${llvm_codename}/ llvm-toolchain-${llvm_codename} main" | tee /etc/apt/sources.list.d/llvm-toolchain.list \
+    && cat <<EOF | tee /etc/apt/sources.list.d/llvm-toolchain.sources >/dev/null \
+Types: deb
+URIs: http://apt.llvm.org/${repo_codename}/
+Suites: ${repo_suite}
+Components: main
+Architectures: amd64
+Signed-By: /usr/share/keyrings/llvm-snapshot.gpg
+EOF \
     && apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
         clang-22 \
         clangd-22 \
         clang-format-22 \
         clang-tidy-22 \
+        clang-tools-22 \
+        llvm-22-dev \
+        llvm-22-tools \
         lld-22 \
         lldb-22 \
+        libclang-common-22-dev \
         libclang-22-dev \
         libclang-cpp22-dev \
         libclang-rt-22-dev \
+        liblldb-22-dev \
+        libpolly-22-dev \
         libfuzzer-22-dev \
         libomp-22-dev \
         libc++-22-dev \
