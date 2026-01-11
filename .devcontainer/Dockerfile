@@ -54,8 +54,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         libssl-dev \
         openssl \
     && mkdir -p /etc/apt/keyrings \
-    && wget -qO /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
-    && gpg --batch --show-keys --with-colons /tmp/kitware-archive-keyring.asc | grep -q "fpr:::::::::4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75:" \
+    && curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
+    && gpg --batch --show-keys --with-colons /tmp/kitware-archive-keyring.asc | grep -q "^fpr:::::::::4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75:$" \
         || (echo "Kitware apt key fingerprint mismatch" && exit 1) \
     && gpg --dearmor /tmp/kitware-archive-keyring.asc -o /etc/apt/keyrings/kitware-archive.gpg \
     && rm -f /tmp/kitware-archive-keyring.asc \
@@ -64,6 +64,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && if [ "${VERSION:-}" = "testing" ] || [ "${VERSION:-}" = "unstable" ]; then \
          cmake_codename="${CMAKE_CODENAME_FALLBACK}"; \
        fi \
+    && case "$cmake_codename" in bookworm|bullseye|buster) ;; *) cmake_codename="${CMAKE_CODENAME_FALLBACK}";; esac \
     && echo "deb [signed-by=/etc/apt/keyrings/kitware-archive.gpg] ${CMAKE_URL} ${cmake_codename} main" \
         > /etc/apt/sources.list.d/kitware.list \
     && apt-get update -q \
