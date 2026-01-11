@@ -28,6 +28,7 @@ RUN if id -u $USER_UID &>/dev/null; then \
 
 # Install common utilities like git, oh-my-zsh, etc
 ARG CMAKE_URL="https://apt.kitware.com/debian/"
+ARG CMAKE_CODENAME_FALLBACK=bookworm
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
         git \
@@ -52,11 +53,14 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         libssl-dev \
         openssl \
     && mkdir -p /etc/apt/keyrings \
-    && wget -qO- https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor -o /etc/apt/keyrings/kitware-archive.gpg \
+    && wget -qO /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
+    && gpg --batch --show-keys --with-colons /tmp/kitware-archive-keyring.asc | grep -q "fpr:::::::::4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75:" \
+    && gpg --dearmor /tmp/kitware-archive-keyring.asc -o /etc/apt/keyrings/kitware-archive.gpg \
+    && rm -f /tmp/kitware-archive-keyring.asc \
     && . /etc/os-release \
-    && cmake_codename="${VERSION_CODENAME:-bookworm}" \
+    && cmake_codename="${VERSION_CODENAME:-${CMAKE_CODENAME_FALLBACK}}" \
     && if [ "${VERSION:-}" = "testing" ] || [ "${VERSION:-}" = "unstable" ] || [ "$cmake_codename" = "forky" ] || [ "$cmake_codename" = "trixie" ]; then \
-         cmake_codename="bookworm"; \
+         cmake_codename="${CMAKE_CODENAME_FALLBACK}"; \
        fi \
     && echo "deb [signed-by=/etc/apt/keyrings/kitware-archive.gpg] ${CMAKE_URL} ${cmake_codename} main" \
         > /etc/apt/sources.list.d/kitware.list \
