@@ -31,7 +31,8 @@ RUN if id -u $USER_UID &>/dev/null; then \
 # Kitware rotates this key annually; update CMAKE_FINGERPRINT when kitware-archive-latest.asc changes (see https://apt.kitware.com/).
 ARG CMAKE_URL="https://apt.kitware.com/debian/"
 ARG CMAKE_CODENAME_FALLBACK=bookworm
-ARG CMAKE_SUPPORTED_CODENAMES="bookworm|bullseye"
+# Space-separated list of supported Debian codenames for Kitware packages
+ARG CMAKE_SUPPORTED_CODENAMES="bookworm bullseye"
 ARG CMAKE_FINGERPRINT=4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
@@ -59,6 +60,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
     && [ -s /tmp/kitware-archive-keyring.asc ] \
+    # Extract fingerprint field ($10) from gpg --with-colons output
     && detected_fpr="$(gpg --batch --import-options show-only --with-fingerprint --with-colons /tmp/kitware-archive-keyring.asc | awk -F: '/^fpr:/ {print $10; exit}')" \
     && [ "$detected_fpr" = "${CMAKE_FINGERPRINT}" ] || (echo "Kitware apt key fingerprint mismatch (expected ${CMAKE_FINGERPRINT}, got ${detected_fpr:-unknown})" && exit 1) \
     && gpg --dearmor /tmp/kitware-archive-keyring.asc -o /etc/apt/keyrings/kitware-archive.gpg \
@@ -66,10 +68,11 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && . /etc/os-release \
     && cmake_codename="${VERSION_CODENAME:-${CMAKE_CODENAME_FALLBACK}}" \
     # Update CMAKE_SUPPORTED_CODENAMES when Kitware publishes new Debian releases
-    && case "$cmake_codename" in \
-         ${CMAKE_SUPPORTED_CODENAMES}) ;; \
-         *) cmake_codename="${CMAKE_CODENAME_FALLBACK}";; \
-       esac \
+    && cmake_supported=false \
+    && for codename in ${CMAKE_SUPPORTED_CODENAMES}; do \
+         if [ "$cmake_codename" = "$codename" ]; then cmake_supported=true; break; fi; \
+       done \
+    && if [ "$cmake_supported" = false ]; then cmake_codename="${CMAKE_CODENAME_FALLBACK}"; fi \
     && echo "deb [signed-by=/etc/apt/keyrings/kitware-archive.gpg] ${CMAKE_URL} ${cmake_codename} main" \
         > /etc/apt/sources.list.d/kitware.list \
     && apt-get update -q \
