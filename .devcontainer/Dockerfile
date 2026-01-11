@@ -27,6 +27,7 @@ RUN if id -u $USER_UID &>/dev/null; then \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Install common utilities like git, oh-my-zsh, etc
+# Kitware Apt signing key fingerprint (2026): 4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
 ARG CMAKE_URL="https://apt.kitware.com/debian/"
 ARG CMAKE_CODENAME_FALLBACK=bookworm
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
@@ -65,7 +66,7 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
        fi \
     && echo "deb [signed-by=/etc/apt/keyrings/kitware-archive.gpg] ${CMAKE_URL} ${cmake_codename} main" \
         > /etc/apt/sources.list.d/kitware.list \
-    && apt-get update -qq \
+    && apt-get update -q \
     && apt-get install -y --no-install-recommends cmake cmake-curses-gui \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
