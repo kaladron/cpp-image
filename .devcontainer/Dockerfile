@@ -27,11 +27,11 @@ RUN if id -u $USER_UID &>/dev/null; then \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Install common utilities like git, oh-my-zsh, etc
-# Kitware Apt signing key fingerprint (2026): 4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
-# Kitware rotates this key annually; update CMAKE_FINGERPRINT when kitware-archive-latest.asc changes.
+# Kitware Apt signing key fingerprint (expires 2026): 4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
+# Kitware rotates this key annually; update CMAKE_FINGERPRINT when kitware-archive-latest.asc changes (see https://apt.kitware.com/).
 ARG CMAKE_URL="https://apt.kitware.com/debian/"
 ARG CMAKE_CODENAME_FALLBACK=bookworm
-ARG CMAKE_SUPPORTED_CODENAMES="bookworm|bullseye|buster"
+ARG CMAKE_SUPPORTED_CODENAMES="bookworm|bullseye"
 ARG CMAKE_FINGERPRINT=4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
@@ -59,8 +59,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
     && [ -s /tmp/kitware-archive-keyring.asc ] \
-    && gpg --batch --import-options show-only --with-fingerprint --with-colons /tmp/kitware-archive-keyring.asc | grep -q "^fpr:::::::::${CMAKE_FINGERPRINT}:$" \
-        || (echo "Kitware apt key fingerprint mismatch (expected ${CMAKE_FINGERPRINT})" && exit 1) \
+    && detected_fpr="$(gpg --batch --import-options show-only --with-fingerprint --with-colons /tmp/kitware-archive-keyring.asc | awk -F: '/^fpr:/ {print $10; exit}')" \
+    && [ "$detected_fpr" = "${CMAKE_FINGERPRINT}" ] || (echo "Kitware apt key fingerprint mismatch (expected ${CMAKE_FINGERPRINT}, got ${detected_fpr:-unknown})" && exit 1) \
     && gpg --dearmor /tmp/kitware-archive-keyring.asc -o /etc/apt/keyrings/kitware-archive.gpg \
     && rm -f /tmp/kitware-archive-keyring.asc \
     && . /etc/os-release \
