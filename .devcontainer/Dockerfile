@@ -59,16 +59,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
     && [ -s /tmp/kitware-archive-keyring.asc ] \
-    && gpg --batch --show-keys --with-colons /tmp/kitware-archive-keyring.asc | grep -q "^fpr:::::::::${CMAKE_FINGERPRINT}:$" \
-        || (echo "Kitware apt key fingerprint mismatch" && exit 1) \
+    && gpg --batch --import-options show-only --with-fingerprint --with-colons /tmp/kitware-archive-keyring.asc | grep -q "^fpr:::::::::${CMAKE_FINGERPRINT}:$" \
+        || (echo "Kitware apt key fingerprint mismatch (expected ${CMAKE_FINGERPRINT})" && exit 1) \
     && gpg --dearmor /tmp/kitware-archive-keyring.asc -o /etc/apt/keyrings/kitware-archive.gpg \
     && rm -f /tmp/kitware-archive-keyring.asc \
     && . /etc/os-release \
-    && os_version="${VERSION:-${VERSION_ID:-}}" \
     && cmake_codename="${VERSION_CODENAME:-${CMAKE_CODENAME_FALLBACK}}" \
-    && if [ "$os_version" = "testing" ] || [ "$os_version" = "unstable" ]; then \
-         cmake_codename="${CMAKE_CODENAME_FALLBACK}"; \
-       fi \
     # Update CMAKE_SUPPORTED_CODENAMES when Kitware publishes new Debian releases
     && case "$cmake_codename" in \
          ${CMAKE_SUPPORTED_CODENAMES}) ;; \
