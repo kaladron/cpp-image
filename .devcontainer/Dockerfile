@@ -55,11 +55,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && mkdir -p /etc/apt/keyrings \
     && wget -qO /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
     && gpg --batch --show-keys --with-colons /tmp/kitware-archive-keyring.asc | grep -q "fpr:::::::::4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75:" \
+        || (echo "Kitware apt key fingerprint mismatch" && exit 1) \
     && gpg --dearmor /tmp/kitware-archive-keyring.asc -o /etc/apt/keyrings/kitware-archive.gpg \
     && rm -f /tmp/kitware-archive-keyring.asc \
     && . /etc/os-release \
     && cmake_codename="${VERSION_CODENAME:-${CMAKE_CODENAME_FALLBACK}}" \
-    && if [ "${VERSION:-}" = "testing" ] || [ "${VERSION:-}" = "unstable" ] || [ "$cmake_codename" = "forky" ] || [ "$cmake_codename" = "trixie" ]; then \
+    && if [ "${VERSION:-}" = "testing" ] || [ "${VERSION:-}" = "unstable" ]; then \
          cmake_codename="${CMAKE_CODENAME_FALLBACK}"; \
        fi \
     && echo "deb [signed-by=/etc/apt/keyrings/kitware-archive.gpg] ${CMAKE_URL} ${cmake_codename} main" \
