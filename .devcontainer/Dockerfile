@@ -27,6 +27,7 @@ RUN if id -u $USER_UID &>/dev/null; then \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Install common utilities like git, oh-my-zsh, etc
+ARG CMAKE_URL="https://apt.kitware.com/debian/"
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
         git \
@@ -47,10 +48,20 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         build-essential \
         gdb \
         clang \
-        cmake \
         pkg-config \
         libssl-dev \
         openssl \
+    && mkdir -p /etc/apt/keyrings \
+    && wget -qO- https://apt.kitware.com/keys/kitware-archive-latest.asc | gpg --dearmor -o /etc/apt/keyrings/kitware-archive.gpg \
+    && . /etc/os-release \
+    && cmake_codename="${VERSION_CODENAME:-bookworm}" \
+    && if [ "${VERSION:-}" = "testing" ] || [ "${VERSION:-}" = "unstable" ] || [ "$cmake_codename" = "forky" ] || [ "$cmake_codename" = "trixie" ]; then \
+         cmake_codename="bookworm"; \
+       fi \
+    && echo "deb [signed-by=/etc/apt/keyrings/kitware-archive.gpg] ${CMAKE_URL} ${cmake_codename} main" \
+        > /etc/apt/sources.list.d/kitware.list \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends cmake cmake-curses-gui \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install LLVM apt repository and full clang 22 toolchain plus ninja-build
