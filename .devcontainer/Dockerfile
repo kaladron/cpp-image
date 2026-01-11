@@ -28,9 +28,11 @@ RUN if id -u $USER_UID &>/dev/null; then \
 
 # Install common utilities like git, oh-my-zsh, etc
 # Kitware Apt signing key fingerprint (2026): 4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
-# Kitware rotates this key annually; update the fingerprint when kitware-archive-latest.asc changes.
+# Kitware rotates this key annually; update CMAKE_FINGERPRINT when kitware-archive-latest.asc changes.
 ARG CMAKE_URL="https://apt.kitware.com/debian/"
 ARG CMAKE_CODENAME_FALLBACK=bookworm
+ARG CMAKE_SUPPORTED_CODENAMES="bookworm|bullseye|buster"
+ARG CMAKE_FINGERPRINT=4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
         git \
@@ -56,17 +58,18 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         openssl \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL --proto '=https' --tlsv1.2 -o /tmp/kitware-archive-keyring.asc https://apt.kitware.com/keys/kitware-archive-latest.asc \
-    && gpg --batch --show-keys --with-colons /tmp/kitware-archive-keyring.asc | grep -q "^fpr:::::::::4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75:$" \
+    && gpg --batch --show-keys --with-colons /tmp/kitware-archive-keyring.asc | grep -q "^fpr:::::::::${CMAKE_FINGERPRINT}:$" \
         || (echo "Kitware apt key fingerprint mismatch" && exit 1) \
     && gpg --dearmor /tmp/kitware-archive-keyring.asc -o /etc/apt/keyrings/kitware-archive.gpg \
     && rm -f /tmp/kitware-archive-keyring.asc \
     && . /etc/os-release \
+    && version_stream="${VERSION:-${VERSION_ID:-}}" \
     && cmake_codename="${VERSION_CODENAME:-${CMAKE_CODENAME_FALLBACK}}" \
-    && if [ "${VERSION:-}" = "testing" ] || [ "${VERSION:-}" = "unstable" ] || [ "${VERSION_ID:-}" = "testing" ] || [ "${VERSION_ID:-}" = "unstable" ]; then \
+    && if [ "$version_stream" = "testing" ] || [ "$version_stream" = "unstable" ]; then \
          cmake_codename="${CMAKE_CODENAME_FALLBACK}"; \
        fi \
-    # Update supported codenames when Kitware publishes new Debian releases
-    && case "$cmake_codename" in bookworm|bullseye|buster) ;; *) cmake_codename="${CMAKE_CODENAME_FALLBACK}";; esac \
+    # Update CMAKE_SUPPORTED_CODENAMES when Kitware publishes new Debian releases
+    && case "$cmake_codename" in ${CMAKE_SUPPORTED_CODENAMES}) ;; *) cmake_codename="${CMAKE_CODENAME_FALLBACK}";; esac \
     && echo "deb [signed-by=/etc/apt/keyrings/kitware-archive.gpg] ${CMAKE_URL} ${cmake_codename} main" \
         > /etc/apt/sources.list.d/kitware.list \
     && apt-get update -q \
