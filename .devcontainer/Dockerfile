@@ -1,6 +1,10 @@
 ARG DEBIAN_VERSION=testing-slim
 FROM debian:${DEBIAN_VERSION}
 
+ARG VARIANT=noble
+ARG CMAKE_URL=https://apt.kitware.com/ubuntu/
+ARG CMAKE_KEY_FINGERPRINT=4DBEBE3EEC96E7B8C6EC5BE99E92FDC6C5B9BA75
+
 USER root
 
 # Create vscode user similar to base image
@@ -47,10 +51,32 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         build-essential \
         gdb \
         clang \
-        cmake \
         pkg-config \
         libssl-dev \
         openssl \
+    && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Install newer CMake from Kitware Ubuntu repository on Debian
+RUN set -eux \
+    && curl -fsSL https://apt.kitware.com/keys/kitware-archive-latest.asc -o /tmp/kitware-archive-latest.asc \
+    && fingerprint="$(gpg --batch --show-keys --with-colons /tmp/kitware-archive-latest.asc | awk -F: '/^fpr:/ {print $10; exit}')" \
+    && if [ "${fingerprint}" != "${CMAKE_KEY_FINGERPRINT}" ]; then \
+        echo "Kitware key fingerprint mismatch: ${fingerprint}"; \
+        exit 1; \
+    fi \
+    && gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg /tmp/kitware-archive-latest.asc \
+    && rm /tmp/kitware-archive-latest.asc \
+    && printf '%s\n' \
+        "Types: deb" \
+        "URIs: ${CMAKE_URL}" \
+        "Suites: ${VARIANT}" \
+        "Components: main" \
+        "Signed-By: /usr/share/keyrings/kitware-archive-keyring.gpg" \
+        | tee /etc/apt/sources.list.d/kitware.sources >/dev/null \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        cmake \
+        cmake-curses-gui \
     && apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
 # Install LLVM apt repository and full clang 22 toolchain plus ninja-build
